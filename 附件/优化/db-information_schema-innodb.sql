@@ -1,0 +1,73 @@
+SELECT CONCAT('select * from ', table_schema, '.' , table_name, ';')
+FROM TABLES 
+WHERE table_schema = 'information_schema' 
+  AND table_name LIKE 'innodb%'
+  ORDER BY table_name;
+  
+SELECT * FROM TABLES;
+SHOW CREATE TABLE information_schema.INNODB_BUFFER_PAGE\G;
+SET GLOBAL innodb_buffer_pool_size = 16*1024*1024;  # ERROR 1238 (HY000): Variable 'innodb_buffer_pool_size' is a read only variable
+SET GLOBAL key_buffer_size = 16*1024*1024; # ERROR 1232 (42000): Incorrect argument type to variable 'key_buffer_size'
+  
+SELECT * FROM information_schema.INNODB_BUFFER_PAGE;
+SELECT * FROM information_schema.INNODB_BUFFER_PAGE_LRU;
+SELECT * FROM information_schema.INNODB_BUFFER_POOL_STATS;
+SELECT * FROM information_schema.INNODB_CMP; # 压缩 compressed --compressed InnoDB table
+SELECT * FROM information_schema.INNODB_CMPMEM;
+SELECT * FROM information_schema.INNODB_CMPMEM_RESET;
+SELECT * FROM information_schema.INNODB_CMP_PER_INDEX;
+SELECT * FROM information_schema.INNODB_CMP_PER_INDEX_RESET;
+SELECT * FROM information_schema.INNODB_CMP_RESET;
+SELECT * FROM information_schema.INNODB_FT_BEING_DELETED; # only used during an OPTIMIZE TABLE maintenance operation.
+SELECT * FROM information_schema.INNODB_FT_CONFIG; #  displays metadata about the FULLTEXT index(全文索引) and associated processing for an InnoDB table.
+SELECT * FROM information_schema.INNODB_FT_DEFAULT_STOPWORD; # 停用词 a list of stopwords that are used by default when creating a FULLTEXT index on an InnoDB table. 
+SELECT * FROM information_schema.INNODB_FT_DELETED; # records rows that are deleted from the FULLTEXT index for an InnoDB table.
+SELECT * FROM information_schema.INNODB_FT_INDEX_CACHE;
+SELECT * FROM information_schema.INNODB_FT_INDEX_TABLE;
+SELECT * FROM information_schema.INNODB_LOCKS;
+SELECT * FROM information_schema.INNODB_LOCK_WAITS;
+SELECT * FROM information_schema.INNODB_METRICS;
+SELECT * FROM information_schema.INNODB_SYS_COLUMNS; # MTYPE:1 = VARCHAR, 2 = CHAR, 3 = FIXBINARY, 4 = BINARY, 5 = BLOB, 6 = INT, 7 = SYS_CHILD, 8 = SYS, 9 = FLOAT, 10 = DOUBLE, 11 = DECIMAL, 12 = VARMYSQL, 13 = MYSQL.
+SELECT * FROM information_schema.INNODB_SYS_DATAFILES;
+SELECT * FROM information_schema.INNODB_SYS_FIELDS; # 索引字段及位置
+SELECT * FROM information_schema.INNODB_SYS_FOREIGN; # foreign keys
+SELECT * FROM information_schema.INNODB_SYS_FOREIGN_COLS;
+SELECT * FROM information_schema.INNODB_SYS_INDEXES; # type:0 = Secondary Index, 1 = Clustered Index, 2 = Unique Index, 3 = Primary Index, 32 = Full-text Index.
+SELECT * FROM information_schema.INNODB_SYS_TABLES;
+SELECT * FROM information_schema.INNODB_SYS_TABLESPACES;
+SELECT * FROM information_schema.INNODB_SYS_TABLESTATS;
+SELECT * FROM information_schema.INNODB_TRX;
+
+
+SELECT * FROM information_schema.INNODB_LOCK_WAITS;
+# Section 14.5.1, “InnoDB Locking”.
+# LOCK_MODE:S, X, IS, IX, and gap locks(for update)
+# LOCK_TYPE:RECORD、TABLE
+SELECT * FROM information_schema.INNODB_LOCKS a
+INNER JOIN information_schema.INNODB_TRX b ON a.LOCK_TRX_ID = b.TRX_ID
+WHERE a.LOCK_ID = 'requested_lock_id'
+  AND a.LOCK_TRX_ID = 'requesting_trx_id';
+
+# table innodb
+SELECT t.name AS table_name,t.`N_COLS`,t.`SPACE`,t.`ZIP_PAGE_SIZE`,c.`NAME` AS column_name,c.`POS`,c.`MTYPE` FROM information_schema.INNODB_SYS_TABLES t
+INNER JOIN information_schema.INNODB_SYS_COLUMNS c ON t.table_id = c.table_id
+;
+
+# table 
+SELECT t.`TABLE_SCHEMA`,t.`TABLE_NAME`,CONCAT_WS('/',t.`TABLE_SCHEMA`,t.`TABLE_NAME`),t.`TABLE_COMMENT`, 
+c.`COLUMN_NAME`,c.`ORDINAL_POSITION`,c.`DATA_TYPE`,c.`COLUMN_TYPE`,c.`COLUMN_COMMENT`
+ FROM information_schema.TABLES t
+INNER JOIN information_schema.COLUMNS c ON t.table_schema = c.`TABLE_SCHEMA` AND t.`TABLE_NAME` = c.`TABLE_NAME`
+WHERE t.`TABLE_SCHEMA` = 'myisam' AND t.`TABLE_NAME` = 't_tc50_login_ans_201611'
+ORDER BY c.`ORDINAL_POSITION`;
+
+# index
+SELECT * FROM information_schema.INNODB_SYS_TABLES t
+INNER JOIN information_schema.INNODB_SYS_INDEXES a ON t.`TABLE_ID` = a.`TABLE_ID`
+INNER JOIN information_schema.INNODB_SYS_FIELDS b ON a.index_id = b.index_id
+WHERE t.name LIKE '%/200902001'
+;
+
+SELECT * FROM information_schema.key_column_usage WHERE table_name = '200902001'; # 索引
+SELECT * FROM information_schema.table_constraints WHERE constraint_schema = 'ab' AND table_name = '200901001'; # 索引
+SELECT * FROM information_schema.statistics WHERE table_schema = 'ab' AND table_name = '200902001'; # 索引
